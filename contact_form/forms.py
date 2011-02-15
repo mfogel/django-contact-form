@@ -53,25 +53,27 @@ class ContactForm(forms.Form):
     method and the ``cleaned_data`` dictionary.
     """
 
-    def __init__(self, data=None, files=None, request=None, *args, **kwargs):
-        if request is None:
-            raise TypeError("Keyword argument 'request' must be supplied")
-        super(ContactForm, self).__init__(data=data, files=files, *args, **kwargs)
-        self.request = request
+    name = forms.CharField(max_length=80, label=_('Your name'),
+            widget=forms.TextInput(attrs=attrs_dict))
 
-    name = forms.CharField(max_length=100,
-                           widget=forms.TextInput(attrs=attrs_dict),
-                           label=_('Your name'))
-    email = forms.EmailField(widget=forms.TextInput(attrs=dict(attrs_dict,
-                                                               maxlength=200)),
-                             label=_('Your email address'))
-    message = forms.CharField(widget=forms.Textarea(attrs=attrs_dict),
-                              label=_('Your message'))
+    email = forms.EmailField(label=_('Your email address'),
+        widget=forms.TextInput(attrs=dict(attrs_dict, maxlength=1000)))
+
+    message = forms.CharField(label=_('Your message'),
+        widget=forms.Textarea(attrs=attrs_dict))
 
     subject_template_name = "contact_form/subject.txt"
     body_template_name = 'contact_form/body.txt'
 
-    # override thses as desired
+    def __init__(self, data=None, files=None, request=None, *args, **kwargs):
+        if request is None:
+            raise TypeError("Keyword argument 'request' must be supplied")
+        super(ContactForm, self).__init__(
+            data=data, files=files, *args, **kwargs)
+        self.request = request
+
+    # making these properties rather than attributes makes these setting
+    # optional.  good in case you're overriding these anyway
     @property
     def to(self):
         # must be a list or tuple
@@ -84,16 +86,16 @@ class ContactForm(forms.Form):
         """
         Render the subject of the message to a string.
         """
-        subject = loader.render_to_string(self.subject_template_name,
-                                          self.get_context())
-        return ''.join(subject.splitlines())
+        subject = loader.render_to_string(
+            self.subject_template_name, self.get_context())
+        return u''.join(subject.splitlines())
 
     def body(self):
         """
         Render the body of the message to a string.
         """
-        return loader.render_to_string(self.body_template_name,
-                                       self.get_context())
+        return loader.render_to_string(
+            self.body_template_name, self.get_context())
 
     def headers(self):
         reply_to = u'"{name}" <{email}>'.format(
@@ -111,8 +113,7 @@ class ContactForm(forms.Form):
         if not self.is_valid():
             raise ValueError("Can't generate Context: invalid contact form")
         return RequestContext(self.request,
-                              dict(self.cleaned_data,
-                                   site=Site.objects.get_current()))
+                dict(self.cleaned_data, site=Site.objects.get_current()))
 
     def get_message_dict(self):
         """
