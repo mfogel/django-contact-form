@@ -1,0 +1,1 @@
+Information request: {{ name|striptags|safe }}

@@ -1,0 +1,9 @@
+Information request from:
+
+Name:   {{ name|striptags|safe }}
+Email:  {{ email|striptags|safe }}
+Phone:  {{ phone|striptags|safe|default:'None provided.' }}
+
+Message:
+
+{{ message|striptags|safe }}
