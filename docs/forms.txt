@@ -6,10 +6,7 @@ Included form classes
 Two form classes are included with this application; one,
 ``contact_form.forms.ContactForm`` implements the necessary base
 functionality of a contact form, and other contact-form classes should
-inherit from it to receive that functionality. The other,
-contact_form.forms.AkismetContactForm``, is a subclass of
-``ContactForm`` provided both because it is useful and as a
-demonstration of subclassing ``ContactForm``.
+inherit from it to receive that functionality.
 
 
 ``contact_form.forms.ContactForm``
@@ -110,9 +107,7 @@ Other notes for subclassing
 Subclasses which want to inspect the current ``HttpRequest`` to add
 functionality can access it via the attribute ``request``; the base
 ``message`` and ``subject`` take advantage of this to use
-``RequestContext`` when rendering their templates. See the
-``AkismetContactForm`` subclass in this file for an example of using
-the request to perform additional validation.
+``RequestContext`` when rendering their templates.
 
 Subclasses which override ``__init__`` need to accept ``*args`` and
 ``**kwargs``, and pass them via ``super`` in order to ensure proper
@@ -129,13 +124,3 @@ argument defaults to ``False``, on the assumption that it's far better
 to notice errors than to silently not send mail from the contact form
 (see also the Zen of Python: "Errors should never pass silently,
 unless explicitly silenced").
-
-
-``contact_form.forms.AkismetContactForm``
-=========================================
-
-Contact form which doesn't add any extra fields, but does add an
-Akismet spam check to the validation routine.
-
-Requires the setting ``AKISMET_API_KEY``, which should be a valid
-Akismet API key.

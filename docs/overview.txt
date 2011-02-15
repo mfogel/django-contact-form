@@ -25,15 +25,6 @@ default ``urls.py`` supplied with this application also takes
 advantage of named URL patterns, a feature which was not present in
 the Django 0.96 release.
 
-If you will be using the included ``AkismetContactForm`` class, which
-performs an Akismet spam check as part of its validation, you will
-need the `Python Akismet module`_ and a valid Akismet API key; you can
-obtain an Akismet API by following the instructions at `the Akismet
-web site`_.
-
-.. _Python Akismet module: http://www.voidspace.org.uk/python/modules.shtml#akismet
-.. _the Akismet web site: http://akismet.com/
-
 
 High-level overview
 ===================
