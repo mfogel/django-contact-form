@@ -1,1 +1,1 @@
-Information request: {{ name|striptags|safe }}
+Contact form submission from {{ name|striptags|safe }}
