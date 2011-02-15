@@ -7,7 +7,7 @@ a web interface, and a subclass demonstrating useful functionality.
 
 from django import forms
 from django.conf import settings
-from django.core.mail import send_mail
+from django.core.mail import EmailMessage
 from django.template import loader
 from django.template import RequestContext
 from django.contrib.sites.models import Site
@@ -142,37 +142,43 @@ class ContactForm(forms.Form):
     email = forms.EmailField(widget=forms.TextInput(attrs=dict(attrs_dict,
                                                                maxlength=200)),
                              label=_('Your email address'))
-    body = forms.CharField(widget=forms.Textarea(attrs=attrs_dict),
+    message = forms.CharField(widget=forms.Textarea(attrs=attrs_dict),
                               label=_('Your message'))
     
-    from_email = settings.DEFAULT_FROM_EMAIL
-    
-    recipient_list = [mail_tuple[1] for mail_tuple in settings.MANAGERS]
+    subject_template_name = "contact_form/subject.txt"
+    body_template_name = 'contact_form/body.txt'
 
-    subject_template_name = "contact_form/contact_form_subject.txt"
-    
-    template_name = 'contact_form/contact_form.txt'
+    # override thses as desired
+    @property
+    def to(self):
+        # must be a list or tuple
+        return (settings.CONTACT_FORM_TO,)
+    @property
+    def from_email(self):
+        return settings.CONTACT_FORM_FROM
 
-    def message(self):
-        """
-        Render the body of the message to a string.
-        
-        """
-        if callable(self.template_name):
-            template_name = self.template_name()
-        else:
-            template_name = self.template_name
-        return loader.render_to_string(template_name,
-                                       self.get_context())
-    
     def subject(self):
         """
         Render the subject of the message to a string.
-        
         """
         subject = loader.render_to_string(self.subject_template_name,
                                           self.get_context())
         return ''.join(subject.splitlines())
+
+    def body(self):
+        """
+        Render the body of the message to a string.
+        """
+        return loader.render_to_string(self.body_template_name,
+                                       self.get_context())
+
+    def headers(self):
+        reply_to = u'"{name}" <{email}>'.format(
+                name=self.cleaned_data['name'],
+                email=self.cleaned_data['email']
+            )
+        return {'Reply-To': reply_to}
+
     
     def get_context(self):
         """
@@ -188,7 +194,6 @@ class ContactForm(forms.Form):
 
         * Any additional variables added by context processors (this
           will be a ``RequestContext``).
-        
         """
         if not self.is_valid():
             raise ValueError("Cannot generate Context from invalid contact form")
@@ -200,23 +205,13 @@ class ContactForm(forms.Form):
         """
         Generate the various parts of the message and return them in a
         dictionary, suitable for passing directly as keyword arguments
-        to ``django.core.mail.send_mail()``.
-
-        By default, the following values are returned:
-
-        * ``from_email``
-
-        * ``message``
-
-        * ``recipient_list``
-
-        * ``subject``
-        
+        to ``django.core.mail.EmailMessage()``.
         """
         if not self.is_valid():
-            raise ValueError("Message cannot be sent from invalid contact form")
+            raise ValueError("Message can't be sent from invalid contact form")
+
         message_dict = {}
-        for message_part in ('from_email', 'message', 'recipient_list', 'subject'):
+        for message_part in ('subject', 'body', 'from_email', 'to', 'headers'):
             attr = getattr(self, message_part)
             message_dict[message_part] = callable(attr) and attr() or attr
         return message_dict
@@ -226,4 +221,5 @@ class ContactForm(forms.Form):
         Build and send the email message.
         
         """
-        send_mail(fail_silently=fail_silently, **self.get_message_dict())
+        email_mes = EmailMessage(**self.get_message_dict())
+        email_mes.send(fail_silently=fail_silently)
