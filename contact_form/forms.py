@@ -8,8 +8,7 @@ a web interface, and a subclass demonstrating useful functionality.
 from django import forms
 from django.conf import settings
 from django.core.mail import EmailMessage
-from django.template import loader
-from django.template import RequestContext
+from django.template import loader, RequestContext
 from django.contrib.sites.models import Site
 from django.utils.translation import ugettext_lazy as _
 
@@ -52,90 +51,14 @@ class ContactForm(forms.Form):
     Other than that, treat it like any other form; validity checks and
     validated data are handled normally, through the ``is_valid``
     method and the ``cleaned_data`` dictionary.
-
-
-    Base implementation
-    -------------------
-
-    Under the hood, this form uses a somewhat abstracted interface in
-    order to make it easier to subclass and add functionality. There
-    are several important attributes subclasses may want to look at
-    overriding, all of which will work (in the base implementation) as
-    either plain attributes or as callable methods:
-
-    * ``from_email`` -- used to get the address to use in the
-      ``From:`` header of the message. The base implementation returns
-      the value of the ``DEFAULT_FROM_EMAIL`` setting.
-
-    * ``message`` -- used to get the message body as a string. The
-      base implementation renders a template using the form's
-      ``cleaned_data`` dictionary as context.
-
-    * ``recipient_list`` -- used to generate the list of recipients
-      for the message. The base implementation returns the email
-      addresses specified in the ``MANAGERS`` setting.
-
-    * ``subject`` -- used to generate the subject line for the
-      message. The base implementation returns the string 'Message
-      sent through the web site', with the name of the current
-      ``Site`` prepended.
-
-    * ``template_name`` -- used by the base ``message`` method to
-      determine which template to use for rendering the
-      message. Default is ``contact_form/contact_form.txt``.
-
-    Internally, the base implementation ``_get_message_dict`` method
-    collects ``from_email``, ``message``, ``recipient_list`` and
-    ``subject`` into a dictionary, which the ``save`` method then
-    passes directly to ``send_mail`` as keyword arguments.
-
-    Particularly important is the ``message`` attribute, with its base
-    implementation as a method which renders a template; because it
-    passes ``cleaned_data`` as the template context, any additional
-    fields added by a subclass will automatically be available in the
-    template. This means that many useful subclasses can get by with
-    just adding a few fields and possibly overriding
-    ``template_name``.
-
-    Much useful functionality can be achieved in subclasses without
-    having to override much of the above; adding additional validation
-    methods works the same as any other form, and typically only a few
-    items -- ``recipient_list`` and ``subject_line``, for example,
-    need to be overridden to achieve customized behavior.
-
-
-    Other notes for subclassing
-    ---------------------------
-
-    Subclasses which want to inspect the current ``HttpRequest`` to
-    add functionality can access it via the attribute ``request``; the
-    base ``message`` takes advantage of this to use ``RequestContext``
-    when rendering its template.
-
-    Subclasses which override ``__init__`` need to accept ``*args``
-    and ``**kwargs``, and pass them via ``super`` in order to ensure
-    proper behavior.
-
-    Subclasses should be careful if overriding ``_get_message_dict``,
-    since that method **must** return a dictionary suitable for
-    passing directly to ``send_mail`` (unless ``save`` is overridden
-    as well).
-
-    Overriding ``save`` is relatively safe, though remember that code
-    which uses your form will expect ``save`` to accept the
-    ``fail_silently`` keyword argument. In the base implementation,
-    that argument defaults to ``False``, on the assumption that it's
-    far better to notice errors than to silently not send mail from
-    the contact form (see also the Zen of Python: "Errors should never
-    pass silently, unless explicitly silenced").
-    
     """
+
     def __init__(self, data=None, files=None, request=None, *args, **kwargs):
         if request is None:
             raise TypeError("Keyword argument 'request' must be supplied")
         super(ContactForm, self).__init__(data=data, files=files, *args, **kwargs)
         self.request = request
-    
+
     name = forms.CharField(max_length=100,
                            widget=forms.TextInput(attrs=attrs_dict),
                            label=_('Your name'))
@@ -144,7 +67,7 @@ class ContactForm(forms.Form):
                              label=_('Your email address'))
     message = forms.CharField(widget=forms.Textarea(attrs=attrs_dict),
                               label=_('Your message'))
-    
+
     subject_template_name = "contact_form/subject.txt"
     body_template_name = 'contact_form/body.txt'
 
@@ -179,28 +102,18 @@ class ContactForm(forms.Form):
             )
         return {'Reply-To': reply_to}
 
-    
+
     def get_context(self):
         """
         Return the context used to render the templates for the email
         subject and body.
-
-        By default, this context includes:
-
-        * All of the validated values in the form, as variables of the
-          same names as their fields.
-
-        * The current ``Site`` object, as the variable ``site``.
-
-        * Any additional variables added by context processors (this
-          will be a ``RequestContext``).
         """
         if not self.is_valid():
-            raise ValueError("Cannot generate Context from invalid contact form")
+            raise ValueError("Can't generate Context: invalid contact form")
         return RequestContext(self.request,
                               dict(self.cleaned_data,
                                    site=Site.objects.get_current()))
-    
+
     def get_message_dict(self):
         """
         Generate the various parts of the message and return them in a
@@ -208,18 +121,18 @@ class ContactForm(forms.Form):
         to ``django.core.mail.EmailMessage()``.
         """
         if not self.is_valid():
-            raise ValueError("Message can't be sent from invalid contact form")
+            raise ValueError("Can't send message: invalid contact form")
 
         message_dict = {}
         for message_part in ('subject', 'body', 'from_email', 'to', 'headers'):
             attr = getattr(self, message_part)
             message_dict[message_part] = callable(attr) and attr() or attr
         return message_dict
-    
+
     def save(self, fail_silently=False):
         """
         Build and send the email message.
-        
+
         """
         email_mes = EmailMessage(**self.get_message_dict())
         email_mes.send(fail_silently=fail_silently)
