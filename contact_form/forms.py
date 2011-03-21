@@ -77,10 +77,13 @@ class ContactForm(forms.Form):
     @property
     def to(self):
         # must be a list or tuple
-        return (settings.CONTACT_FORM_TO,)
+        return settings.CONTACT_FORM_TO
     @property
     def from_email(self):
-        return settings.CONTACT_FORM_FROM
+        try:
+            return settings.CONTACT_FORM_FROM
+        except AttributeError:
+            return settings.DEFAULT_FROM_EMAIL
 
     def subject(self):
         """
