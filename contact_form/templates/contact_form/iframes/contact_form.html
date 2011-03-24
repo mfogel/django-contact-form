@@ -1,0 +1,11 @@
+{% extends 'iframe-base.html' %}
+
+{% block main_content %}
+<div class="contact_form">
+	<form method="post">
+		{% csrf_token %}
+        {{ form.as_p }}
+		<input type="submit" value="Send" />
+	</form>
+</div>
+{% endblock %}

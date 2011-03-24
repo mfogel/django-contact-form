@@ -1,0 +1,8 @@
+{% extends 'iframe-base.html' %}
+{% load url from future %}
+
+{% block main_content %}
+<div class="contact_form sent">
+<p>Thanks for your message! We've received it and will be getting back to you shortly. Want to <a href="{% url 'contact-form' %}">send another?</a></p>
+</div>
+{% endblock %}

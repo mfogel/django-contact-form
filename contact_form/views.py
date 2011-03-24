@@ -12,7 +12,7 @@ from contact_form.forms import ContactForm
 
 
 def contact_form(request, form_class=ContactForm,
-                 template_name='contact_form/contact_form.html',
+                 template_name='contact_form/iframes/contact_form.html',
                  success_url=None, extra_context=None,
                  fail_silently=False):
     """
@@ -72,7 +72,7 @@ def contact_form(request, form_class=ContactForm,
     #
     
     if success_url is None:
-        success_url = reverse('contact_form_sent')
+        success_url = reverse('contact-form-sent')
     if request.method == 'POST':
         form = form_class(data=request.POST, files=request.FILES, request=request)
         if form.is_valid():

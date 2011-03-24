@@ -62,8 +62,8 @@ class ContactForm(forms.Form):
     message = forms.CharField(label=_('Your message'),
         widget=forms.Textarea(attrs=attrs_dict))
 
-    subject_template_name = "contact_form/subject.txt"
-    body_template_name = 'contact_form/body.txt'
+    subject_template_name = "contact_form/emails/subject.txt"
+    body_template_name = 'contact_form/emails/body.txt'
 
     def __init__(self, data=None, files=None, request=None, *args, **kwargs):
         if request is None:
